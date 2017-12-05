@@ -40,9 +40,9 @@ OBJDIR_RELEASE = obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = bin/Release/sempm
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/src/coc.o $(OBJDIR_DEBUG)/src/define_env.o $(OBJDIR_DEBUG)/src/diffcorr.o $(OBJDIR_DEBUG)/src/eminsem.o $(OBJDIR_DEBUG)/src/gnuplot_i.o $(OBJDIR_DEBUG)/src/gslc.o $(OBJDIR_DEBUG)/src/init.o $(OBJDIR_DEBUG)/src/lpdyneq.o $(OBJDIR_DEBUG)/src/nfo2.o $(OBJDIR_DEBUG)/src/nrutil.o $(OBJDIR_DEBUG)/src/ode.o $(OBJDIR_DEBUG)/src/odezero.o $(OBJDIR_DEBUG)/src/Manip.o $(OBJDIR_DEBUG)/src/pmcoc.o $(OBJDIR_DEBUG)/src/pmode.o $(OBJDIR_DEBUG)/src/pmt.o $(OBJDIR_DEBUG)/src/poincare.o $(OBJDIR_DEBUG)/src/qbcp.o $(OBJDIR_DEBUG)/src/qbtbp.o $(OBJDIR_DEBUG)/src/timec.o $(OBJDIR_DEBUG)/test/ofs_test.o $(OBJDIR_DEBUG)/test/ofts_test.o $(OBJDIR_DEBUG)/test/oftsh_test.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/src/Config.o $(OBJDIR_DEBUG)/src/Constants.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/src/diffcorr.o $(OBJDIR_DEBUG)/src/em_se_in.o $(OBJDIR_DEBUG)/src/env.o $(OBJDIR_DEBUG)/src/gnuplot_i.o $(OBJDIR_DEBUG)/src/gslc.o $(OBJDIR_DEBUG)/src/init.o $(OBJDIR_DEBUG)/src/lpdyneq.o $(OBJDIR_DEBUG)/src/manip.o $(OBJDIR_DEBUG)/src/nfo2.o $(OBJDIR_DEBUG)/src/nrutil.o $(OBJDIR_DEBUG)/src/ode.o $(OBJDIR_DEBUG)/src/odezero.o $(OBJDIR_DEBUG)/src/constants.o $(OBJDIR_DEBUG)/src/pmeval.o $(OBJDIR_DEBUG)/src/pmode.o $(OBJDIR_DEBUG)/src/pmt.o $(OBJDIR_DEBUG)/src/poincare.o $(OBJDIR_DEBUG)/src/qbtbp.o $(OBJDIR_DEBUG)/src/timec.o $(OBJDIR_DEBUG)/src/vf.o $(OBJDIR_DEBUG)/test/ofs_test.o $(OBJDIR_DEBUG)/test/ofts_test.o $(OBJDIR_DEBUG)/test/oftsh_test.o $(OBJDIR_DEBUG)/sempm.o $(OBJDIR_DEBUG)/src/coc.o $(OBJDIR_DEBUG)/src/config.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/src/coc.o $(OBJDIR_RELEASE)/src/define_env.o $(OBJDIR_RELEASE)/src/diffcorr.o $(OBJDIR_RELEASE)/src/eminsem.o $(OBJDIR_RELEASE)/src/gnuplot_i.o $(OBJDIR_RELEASE)/src/gslc.o $(OBJDIR_RELEASE)/src/init.o $(OBJDIR_RELEASE)/src/lpdyneq.o $(OBJDIR_RELEASE)/src/nfo2.o $(OBJDIR_RELEASE)/src/nrutil.o $(OBJDIR_RELEASE)/src/ode.o $(OBJDIR_RELEASE)/src/odezero.o $(OBJDIR_RELEASE)/src/Manip.o $(OBJDIR_RELEASE)/src/pmcoc.o $(OBJDIR_RELEASE)/src/pmode.o $(OBJDIR_RELEASE)/src/pmt.o $(OBJDIR_RELEASE)/src/poincare.o $(OBJDIR_RELEASE)/src/qbcp.o $(OBJDIR_RELEASE)/src/qbtbp.o $(OBJDIR_RELEASE)/src/timec.o $(OBJDIR_RELEASE)/test/ofs_test.o $(OBJDIR_RELEASE)/test/ofts_test.o $(OBJDIR_RELEASE)/test/oftsh_test.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/src/Config.o $(OBJDIR_RELEASE)/src/Constants.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/src/diffcorr.o $(OBJDIR_RELEASE)/src/em_se_in.o $(OBJDIR_RELEASE)/src/env.o $(OBJDIR_RELEASE)/src/gnuplot_i.o $(OBJDIR_RELEASE)/src/gslc.o $(OBJDIR_RELEASE)/src/init.o $(OBJDIR_RELEASE)/src/lpdyneq.o $(OBJDIR_RELEASE)/src/manip.o $(OBJDIR_RELEASE)/src/nfo2.o $(OBJDIR_RELEASE)/src/nrutil.o $(OBJDIR_RELEASE)/src/ode.o $(OBJDIR_RELEASE)/src/odezero.o $(OBJDIR_RELEASE)/src/constants.o $(OBJDIR_RELEASE)/src/pmeval.o $(OBJDIR_RELEASE)/src/pmode.o $(OBJDIR_RELEASE)/src/pmt.o $(OBJDIR_RELEASE)/src/poincare.o $(OBJDIR_RELEASE)/src/qbtbp.o $(OBJDIR_RELEASE)/src/timec.o $(OBJDIR_RELEASE)/src/vf.o $(OBJDIR_RELEASE)/test/ofs_test.o $(OBJDIR_RELEASE)/test/ofts_test.o $(OBJDIR_RELEASE)/test/oftsh_test.o $(OBJDIR_RELEASE)/sempm.o $(OBJDIR_RELEASE)/src/coc.o $(OBJDIR_RELEASE)/src/config.o
 
 all: debug release
 
@@ -61,17 +61,14 @@ debug: before_debug out_debug after_debug
 out_debug: before_debug $(OBJ_DEBUG) $(DEP_DEBUG)
 	$(LD) $(LIBDIR_DEBUG) -o $(OUT_DEBUG) $(OBJ_DEBUG)  $(LDFLAGS_DEBUG) $(LIB_DEBUG)
 
-$(OBJDIR_DEBUG)/src/coc.o: src/coc.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/coc.cpp -o $(OBJDIR_DEBUG)/src/coc.o
-
-$(OBJDIR_DEBUG)/src/define_env.o: src/define_env.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/define_env.cpp -o $(OBJDIR_DEBUG)/src/define_env.o
-
 $(OBJDIR_DEBUG)/src/diffcorr.o: src/diffcorr.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/diffcorr.cpp -o $(OBJDIR_DEBUG)/src/diffcorr.o
 
-$(OBJDIR_DEBUG)/src/eminsem.o: src/eminsem.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/eminsem.cpp -o $(OBJDIR_DEBUG)/src/eminsem.o
+$(OBJDIR_DEBUG)/src/em_se_in.o: src/em_se_in.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/em_se_in.cpp -o $(OBJDIR_DEBUG)/src/em_se_in.o
+
+$(OBJDIR_DEBUG)/src/env.o: src/env.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/env.cpp -o $(OBJDIR_DEBUG)/src/env.o
 
 $(OBJDIR_DEBUG)/src/gnuplot_i.o: src/gnuplot_i.c
 	$(CC) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/gnuplot_i.c -o $(OBJDIR_DEBUG)/src/gnuplot_i.o
@@ -85,6 +82,9 @@ $(OBJDIR_DEBUG)/src/init.o: src/init.cpp
 $(OBJDIR_DEBUG)/src/lpdyneq.o: src/lpdyneq.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/lpdyneq.cpp -o $(OBJDIR_DEBUG)/src/lpdyneq.o
 
+$(OBJDIR_DEBUG)/src/manip.o: src/manip.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/manip.cpp -o $(OBJDIR_DEBUG)/src/manip.o
+
 $(OBJDIR_DEBUG)/src/nfo2.o: src/nfo2.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/nfo2.cpp -o $(OBJDIR_DEBUG)/src/nfo2.o
 
@@ -97,11 +97,11 @@ $(OBJDIR_DEBUG)/src/ode.o: src/ode.cpp
 $(OBJDIR_DEBUG)/src/odezero.o: src/odezero.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/odezero.cpp -o $(OBJDIR_DEBUG)/src/odezero.o
 
-$(OBJDIR_DEBUG)/src/Manip.o: src/Manip.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/Manip.cpp -o $(OBJDIR_DEBUG)/src/Manip.o
+$(OBJDIR_DEBUG)/src/constants.o: src/constants.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/constants.cpp -o $(OBJDIR_DEBUG)/src/constants.o
 
-$(OBJDIR_DEBUG)/src/pmcoc.o: src/pmcoc.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/pmcoc.cpp -o $(OBJDIR_DEBUG)/src/pmcoc.o
+$(OBJDIR_DEBUG)/src/pmeval.o: src/pmeval.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/pmeval.cpp -o $(OBJDIR_DEBUG)/src/pmeval.o
 
 $(OBJDIR_DEBUG)/src/pmode.o: src/pmode.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/pmode.cpp -o $(OBJDIR_DEBUG)/src/pmode.o
@@ -112,14 +112,14 @@ $(OBJDIR_DEBUG)/src/pmt.o: src/pmt.cpp
 $(OBJDIR_DEBUG)/src/poincare.o: src/poincare.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/poincare.cpp -o $(OBJDIR_DEBUG)/src/poincare.o
 
-$(OBJDIR_DEBUG)/src/qbcp.o: src/qbcp.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/qbcp.cpp -o $(OBJDIR_DEBUG)/src/qbcp.o
-
 $(OBJDIR_DEBUG)/src/qbtbp.o: src/qbtbp.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/qbtbp.cpp -o $(OBJDIR_DEBUG)/src/qbtbp.o
 
 $(OBJDIR_DEBUG)/src/timec.o: src/timec.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/timec.cpp -o $(OBJDIR_DEBUG)/src/timec.o
+
+$(OBJDIR_DEBUG)/src/vf.o: src/vf.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/vf.cpp -o $(OBJDIR_DEBUG)/src/vf.o
 
 $(OBJDIR_DEBUG)/test/ofs_test.o: test/ofs_test.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c test/ofs_test.cpp -o $(OBJDIR_DEBUG)/test/ofs_test.o
@@ -130,14 +130,14 @@ $(OBJDIR_DEBUG)/test/ofts_test.o: test/ofts_test.cpp
 $(OBJDIR_DEBUG)/test/oftsh_test.o: test/oftsh_test.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c test/oftsh_test.cpp -o $(OBJDIR_DEBUG)/test/oftsh_test.o
 
-$(OBJDIR_DEBUG)/main.o: main.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c main.cpp -o $(OBJDIR_DEBUG)/main.o
+$(OBJDIR_DEBUG)/sempm.o: sempm.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c sempm.cpp -o $(OBJDIR_DEBUG)/sempm.o
 
-$(OBJDIR_DEBUG)/src/Config.o: src/Config.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/Config.cpp -o $(OBJDIR_DEBUG)/src/Config.o
+$(OBJDIR_DEBUG)/src/coc.o: src/coc.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/coc.cpp -o $(OBJDIR_DEBUG)/src/coc.o
 
-$(OBJDIR_DEBUG)/src/Constants.o: src/Constants.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/Constants.cpp -o $(OBJDIR_DEBUG)/src/Constants.o
+$(OBJDIR_DEBUG)/src/config.o: src/config.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/config.cpp -o $(OBJDIR_DEBUG)/src/config.o
 
 clean_debug: 
 	rm -f $(OBJ_DEBUG) $(OUT_DEBUG)
@@ -159,17 +159,14 @@ release: before_release out_release after_release
 out_release: before_release $(OBJ_RELEASE) $(DEP_RELEASE)
 	$(LD) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE)
 
-$(OBJDIR_RELEASE)/src/coc.o: src/coc.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/coc.cpp -o $(OBJDIR_RELEASE)/src/coc.o
-
-$(OBJDIR_RELEASE)/src/define_env.o: src/define_env.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/define_env.cpp -o $(OBJDIR_RELEASE)/src/define_env.o
-
 $(OBJDIR_RELEASE)/src/diffcorr.o: src/diffcorr.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/diffcorr.cpp -o $(OBJDIR_RELEASE)/src/diffcorr.o
 
-$(OBJDIR_RELEASE)/src/eminsem.o: src/eminsem.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/eminsem.cpp -o $(OBJDIR_RELEASE)/src/eminsem.o
+$(OBJDIR_RELEASE)/src/em_se_in.o: src/em_se_in.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/em_se_in.cpp -o $(OBJDIR_RELEASE)/src/em_se_in.o
+
+$(OBJDIR_RELEASE)/src/env.o: src/env.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/env.cpp -o $(OBJDIR_RELEASE)/src/env.o
 
 $(OBJDIR_RELEASE)/src/gnuplot_i.o: src/gnuplot_i.c
 	$(CC) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/gnuplot_i.c -o $(OBJDIR_RELEASE)/src/gnuplot_i.o
@@ -183,6 +180,9 @@ $(OBJDIR_RELEASE)/src/init.o: src/init.cpp
 $(OBJDIR_RELEASE)/src/lpdyneq.o: src/lpdyneq.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/lpdyneq.cpp -o $(OBJDIR_RELEASE)/src/lpdyneq.o
 
+$(OBJDIR_RELEASE)/src/manip.o: src/manip.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/manip.cpp -o $(OBJDIR_RELEASE)/src/manip.o
+
 $(OBJDIR_RELEASE)/src/nfo2.o: src/nfo2.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/nfo2.cpp -o $(OBJDIR_RELEASE)/src/nfo2.o
 
@@ -195,11 +195,11 @@ $(OBJDIR_RELEASE)/src/ode.o: src/ode.cpp
 $(OBJDIR_RELEASE)/src/odezero.o: src/odezero.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/odezero.cpp -o $(OBJDIR_RELEASE)/src/odezero.o
 
-$(OBJDIR_RELEASE)/src/Manip.o: src/Manip.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/Manip.cpp -o $(OBJDIR_RELEASE)/src/Manip.o
+$(OBJDIR_RELEASE)/src/constants.o: src/constants.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/constants.cpp -o $(OBJDIR_RELEASE)/src/constants.o
 
-$(OBJDIR_RELEASE)/src/pmcoc.o: src/pmcoc.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/pmcoc.cpp -o $(OBJDIR_RELEASE)/src/pmcoc.o
+$(OBJDIR_RELEASE)/src/pmeval.o: src/pmeval.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/pmeval.cpp -o $(OBJDIR_RELEASE)/src/pmeval.o
 
 $(OBJDIR_RELEASE)/src/pmode.o: src/pmode.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/pmode.cpp -o $(OBJDIR_RELEASE)/src/pmode.o
@@ -210,14 +210,14 @@ $(OBJDIR_RELEASE)/src/pmt.o: src/pmt.cpp
 $(OBJDIR_RELEASE)/src/poincare.o: src/poincare.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/poincare.cpp -o $(OBJDIR_RELEASE)/src/poincare.o
 
-$(OBJDIR_RELEASE)/src/qbcp.o: src/qbcp.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/qbcp.cpp -o $(OBJDIR_RELEASE)/src/qbcp.o
-
 $(OBJDIR_RELEASE)/src/qbtbp.o: src/qbtbp.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/qbtbp.cpp -o $(OBJDIR_RELEASE)/src/qbtbp.o
 
 $(OBJDIR_RELEASE)/src/timec.o: src/timec.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/timec.cpp -o $(OBJDIR_RELEASE)/src/timec.o
+
+$(OBJDIR_RELEASE)/src/vf.o: src/vf.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/vf.cpp -o $(OBJDIR_RELEASE)/src/vf.o
 
 $(OBJDIR_RELEASE)/test/ofs_test.o: test/ofs_test.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c test/ofs_test.cpp -o $(OBJDIR_RELEASE)/test/ofs_test.o
@@ -228,14 +228,14 @@ $(OBJDIR_RELEASE)/test/ofts_test.o: test/ofts_test.cpp
 $(OBJDIR_RELEASE)/test/oftsh_test.o: test/oftsh_test.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c test/oftsh_test.cpp -o $(OBJDIR_RELEASE)/test/oftsh_test.o
 
-$(OBJDIR_RELEASE)/main.o: main.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c main.cpp -o $(OBJDIR_RELEASE)/main.o
+$(OBJDIR_RELEASE)/sempm.o: sempm.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c sempm.cpp -o $(OBJDIR_RELEASE)/sempm.o
 
-$(OBJDIR_RELEASE)/src/Config.o: src/Config.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/Config.cpp -o $(OBJDIR_RELEASE)/src/Config.o
+$(OBJDIR_RELEASE)/src/coc.o: src/coc.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/coc.cpp -o $(OBJDIR_RELEASE)/src/coc.o
 
-$(OBJDIR_RELEASE)/src/Constants.o: src/Constants.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/Constants.cpp -o $(OBJDIR_RELEASE)/src/Constants.o
+$(OBJDIR_RELEASE)/src/config.o: src/config.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/config.cpp -o $(OBJDIR_RELEASE)/src/config.o
 
 clean_release: 
 	rm -f $(OBJ_RELEASE) $(OUT_RELEASE)

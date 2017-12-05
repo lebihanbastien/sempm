@@ -16,6 +16,7 @@ from command line or shell scripts, and available here: https://sourceforge.net/
 The GUI is optional since SEMPM can be launched from the command line with a configuration script.
 
 # Building 
+# (Makefile was obtained via: cbp2make -in sempm.cbp -out Makefile -all-os)
 #=========================================================================
 Two possibilities
 
