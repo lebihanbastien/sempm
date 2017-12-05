@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="sempm" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/sempm" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/sempm" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fopenmp" />
+			<Add directory="src" />
+			<Add directory="include" />
+			<Add directory="test" />
+			<Add directory="fortran" />
+			<Add directory="gsl" />
+			<Add directory="../sempm" />
+		</Compiler>
+		<Linker>
+			<Add option="fortran/routines0.o -lgfortran" />
+			<Add option="fortran/foun.o -lgfortran" />
+			<Add option="-fopenmp" />
+			<Add library="lib/libgsl.a" />
+			<Add library="lib/libgslcblas.a" />
+		</Linker>
+		<Unit filename="include/Config.h" />
+		<Unit filename="include/Constants.h" />
+		<Unit filename="include/Manip.h" />
+		<Unit filename="include/coc.h" />
+		<Unit filename="include/define_env.h" />
+		<Unit filename="include/diffcorr.h" />
+		<Unit filename="include/eminsem.h" />
+		<Unit filename="include/gnuplot_i.h" />
+		<Unit filename="include/gslc.h" />
+		<Unit filename="include/init.h" />
+		<Unit filename="include/lpdyneq.h" />
+		<Unit filename="include/matrix.h" />
+		<Unit filename="include/nfo2.h" />
+		<Unit filename="include/nrutil.h" />
+		<Unit filename="include/ode.h" />
+		<Unit filename="include/odezero.h" />
+		<Unit filename="include/ofs.h" />
+		<Unit filename="include/ofts.h" />
+		<Unit filename="include/oftsh.h" />
+		<Unit filename="include/pmcoc.h" />
+		<Unit filename="include/pmode.h" />
+		<Unit filename="include/pmt.h" />
+		<Unit filename="include/poincare.h" />
+		<Unit filename="include/qbcp.h" />
+		<Unit filename="include/tests.h" />
+		<Unit filename="include/timec.h" />
+		<Unit filename="sempm.cpp" />
+		<Unit filename="src/Config.cpp" />
+		<Unit filename="src/Constants.cpp" />
+		<Unit filename="src/Manip.cpp" />
+		<Unit filename="src/coc.cpp" />
+		<Unit filename="src/define_env.cpp" />
+		<Unit filename="src/diffcorr.cpp" />
+		<Unit filename="src/eminsem.cpp" />
+		<Unit filename="src/gnuplot_i.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/gslc.cpp" />
+		<Unit filename="src/init.cpp" />
+		<Unit filename="src/lpdyneq.cpp" />
+		<Unit filename="src/matrix.tpp" />
+		<Unit filename="src/nfo2.cpp" />
+		<Unit filename="src/nrutil.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/ode.cpp" />
+		<Unit filename="src/odezero.cpp" />
+		<Unit filename="src/ofs.tpp" />
+		<Unit filename="src/ofts.tpp" />
+		<Unit filename="src/oftsh.tpp" />
+		<Unit filename="src/pmcoc.cpp" />
+		<Unit filename="src/pmode.cpp" />
+		<Unit filename="src/pmt.cpp" />
+		<Unit filename="src/poincare.cpp" />
+		<Unit filename="src/qbcp.cpp" />
+		<Unit filename="src/qbtbp.cpp" />
+		<Unit filename="src/timec.cpp" />
+		<Unit filename="test/ofs_test.cpp" />
+		<Unit filename="test/ofs_test.h" />
+		<Unit filename="test/ofts_test.cpp" />
+		<Unit filename="test/ofts_test.h" />
+		<Unit filename="test/oftsh_test.cpp" />
+		<Unit filename="test/oftsh_test.h" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

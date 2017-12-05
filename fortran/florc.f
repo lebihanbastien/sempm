@@ -1,0 +1,1052 @@
+VEPROC********************************************************************
+C  NOTA !!. Aquest arxiu es una modificacio de l'arxiu FLOR
+C           del "Study of Poincare Maps ...." i que esta al directori
+C           habi a fi d'usar el model bicircular coherent en lloc
+C           del bicircular que s'explicita en el Final Report pag 70.
+C           S'han introduit modificacions ja que l'orbita es molt
+C           inestable i la integracio durant un periode introdueix
+C           bastant error si no si fa res.
+C           De fet momes hi ha canvis a les rutines FLOR, CANFLR i
+C           CAMPFL, on s'ha canviat la crida a BICIRH per BICOHE.
+C********************************************************************
+
+
+
+
+        SUBROUTINE FLOR(Y,WS,NTP,G1,CVXY,CVP,IBJ,LOF1,LOF2)
+C********************************************************************
+C  GIVEN A PERIODIC ORBIT FOR T=0, THIS ROUTINE COMPUTES THE GENERATING
+C  FUNCTION (IN FOURIER SERIES) WHICH CANCELS THE LINEAR PART OF
+C  THE HAMILTONIAN OF THE BICIRCULAR PROBLEM EXPANDED IN REAL VARIABLES
+C  AROUND AND EQUILIBRIUM POINT, AND THE FLOQUET CHANGE OF COORDINATES
+C  WHICH GIVES THE SECOND ORDER PART IN CONSTANT FORM.
+C  THE EXPANSION OF THE HAMILTONIAN IS NOT NEEDED SINCE THE
+C  COMPUTATIONS ARE ALL NUMERIC, USING THE VECTORFIELD BICIR WHICH
+C  CONTAIN THE EQUATIONS OF MOTION AND THE VARIATIONAL EQUATIONS IN
+C  HAMILTONIAN (REAL) VARIABLES (X, PX, Y, PY, Z, PZ).
+C
+C  INPUT:
+C
+C    Y(*) THE INITIAL CONDITION (X,PX,Y,PY,Z,PZ) OF THE PERIODIC
+C         ORBIT FOR T=0.
+C    WS   THE FREQUENCY OF THE PERTURBATION (THE PERIOD OF THE
+C         ORBIT IS 2*PI/WS).
+C   NTP   THE NUMBER OF POINTS FOR PERFORMING THE FOURIER ANALYSIS
+C         OF THE PERIODIC MAGNITUDES. (SEE PARAMETER NMAX).
+C   IBJ   INDICATOR. IF IBJ=1 THE FLOQUET CHANGE PUTS THE SECOND
+C         ORDER PART OF THE HAMILTONIAN IN ITS SIMPLEST FORM
+C         (THE VARIATIONAL EQUATIONS ARE CHANGED INTO A CONSTANT
+C          SYSTEM OF EQUATIONS WHOSE MATRIX IS IN JORDAN FORM).
+C          IF IBJ=0 ONLY A CONSTANT FORM IS FOUND (THE ABOVE
+C          MATRIX GENERICALLY WILL BE FULL).
+C   LOF1  THE NUMBER OF TERMS IN THE FOURIER ANALYSIS OF THE
+C         COEFFICCIENTS OF G1 AND CVXY.
+C   LOF2  THE NUMBER OF TERMS IN THE FOURIER ANALYSIS OF THE
+C         COEFFICIENTS OF CVP.
+C         AND CVXY (POLYNOMIALS AND MATRICES OF ORDER 1).
+C
+C  OUTPUT: (THESE VARIABLES ARE COMPLEX*16)
+C
+C G1(*)  THE GENERATING FUNCTION WHICH CANCELS THE LINEAR PART OF
+C        THE HAMILTONIAN BY MEANS OF THE LIE METHOD. IS AN HOMOGENEOUS
+C        POLYNOMIAL OF DEGREE 1 WITH PERIODIC COEFFICCIENTS.
+C CVXY(*)  THE PART OF THE FLOQUET CHANGE OF VARIABLES RELATED WITH THE
+C        POSITIONS AND MOMENTA. IS A MATRIX WITH PERIODIC COEFFICIENTS.
+C CVP(*)   THE PART OF THE FLOQUET CHANGE OF VARIABLES RELATED WITH
+C        THE FICTICIOUS ACTION. IS AN HOMOGENEOUS POLYNOMIAL OF
+C        DEGREE TWO WITH PERIODIC COEFFICCIENTS.
+C********************************************************************
+        IMPLICIT REAL*8 (A-H,O-Z)
+C NEXT PARAMETERS MEAN THE FOLLOWING:
+C NFN = NUMBER OF TERMS (PERIODIC FUNCTIONS) DIFFERENT FROM ZERO
+C       IN THE FLOQUET CHANGE OF COORDINATES.
+C NT1 = NUMBER OF MONOMIALS OF ORDER 1 DIFFERENT FROM ZERO WHICH
+C       APPEAR IN THE EXPANSION OF THE HAMILTONIAN.
+C NT2 = NUMBER OF MONOMIALS OF ORDER 2 DIFFERENT FROM ZERO WHICH
+C       APPEAR IN THE EXPANSION OF THE HAMILTONIAN.
+C NMAX= MAX NUMBER OF POINTS FOR PERFORMING THE FOURIER ANALYSIS.
+C TOLS= THRESHOLD TO DECIDE IF A MATRIX IS SYMPLECTIC OR NOT.
+        PARAMETER (NFN=20,NT1=4,NT2=13,NMAX=300,TOLS=1.D-9)
+        COMPLEX*16 VAM(6),B(6,6),VEM(6,6),VEMI(6,6),VEMA(6,6),DD(6)
+        COMPLEX*16 BJ(6,6),BJM(6,6),FN(NFN*NMAX),FP(NT2*NMAX)
+        COMPLEX*16 FG(NT1*NMAX),CVXY(1),CVP(1),G1(1)
+        DIMENSION X(42),Y(6),XMO(6,6),RBJ(6,6),RBJM(6,6),X1(6),X2(6)
+        DIMENSION BR(42),R(13,42),F(42),XID(6,6),XMO1(6,6),XMO2(6,6)
+        DIMENSION RR(6),RI(6),VR(6,6),VI(6,6),INTGER(6),XA(42)
+        EQUIVALENCE (X(7),XMO(1,1))
+        COMMON /BASEF/RB(6,6)
+        EXTERNAL BICOHE,CAMPFL
+        DATA NSO/3/
+        TOL=1.D-13
+        HMIN=1.D-8
+C
+C COMPUTING THE MONODROMY MATRIX
+C
+        PERIO=8.D0*DATAN(1.D0)/WS
+        CALL ENDENR(Y,PERIO,X1,X2,XMO1,XMO2,BICOHE)
+        ERO=0.D0
+        DO 11 I=1,6
+        ERO=ERO+(X1(I)-X2(I))*(X1(I)-X2(I))
+11      CONTINUE
+        ERO=DSQRT(ERO)
+        WRITE (*,*) 'ERROR IN THE ORBIT: ',ERO
+
+        DO 1 I=1,6
+        DO 2 J=1,6
+        XMO(J,I)=0.D0
+        B(J,I)=DCMPLX(0.D0,0.D0)
+        XID(J,I)=0.D0
+        DO 3 K=1,6
+        XMO(J,I)=XMO(J,I)+XMO1(J,K)*XMO1(K,I)
+3       CONTINUE
+2       CONTINUE
+        XID(I,I)=1.D0
+1       CONTINUE
+
+
+
+C  NEXT ROUTINE F02AGF BELONGS TO THE NAG LIBRARY. IT COMPUTES THE
+C  EIGENVALUES AND EIGENVECTORS OF THE MONODROMY MATRIX XMO. THE
+C  EIGENVALUES ARE GIVEN IN RR AND RI (REAL AND IMAGINARY PARTS).
+C  THE EIGENVECTORS ARE GIVEN IN VR AND VI (REAL AND IMAGINARY PARTS)
+C  STORED IN COLUMNS.
+        IFAIL=0
+
+
+c++++++++++++++++++++++++++++++++++++++++++
+        do 9 i=1,6
+        do 9 j=1,6
+        xmo1(i,j)=xmo(i,j)
+9       continue
+c++++++++++++++++++++++++++++++++++++++++++
+
+
+        CALL F02AGF(XMO,6,6,RR,RI,VR,6,VI,6,INTGER,IFAIL)
+C
+C  FIRST STEP. COMPUTING THE LOGARITHMS OF THE EIGENVALUES OF THE
+C  MONODROMY MATRIX DIVIDED BY THE PERIOD OF THE ORBIT. THEY ARE
+C  STORED IN THE DIAGONAL OF B.
+C  THE SYMPLECTIC COMPLEX BASIS WHICH DIAGONALIZES THE MONODROMY MATRIX IS
+C  STORED IN VEM. THE CORRESPONDING EIGENVALUES ARE STORED TEMPORALLY
+C  IN VAM, AND THE INVERSE OF VEM IN VEMI. VEMI AND VEM ARE USED TO
+C  PUT B IN THE USUAL COORDINATES. FINALLY IN VAM WE STORE THE
+C  LOGARITHMS OF THE EIGENVALUES OF THE MONODROMY MATRIX DIVIDED BY
+C  THE PERIOD OF THE ORBIT.
+C
+        WRITE (*,*) 'FLOR. IFAIL F02AGF: ',IFAIL
+
+
+c++++++++++++++++++++++++++++++++++++++++++
+c        call power(xmo1,x2,val,6)
+c        write (*,*) 'vep pot i vep nag ,dif:'
+c        write (*,*) (x2(i),i=1,6)
+c        write (*,*) (vr(i,1),i=1,6)
+c        write (*,*) ((x2(i)-vr(i,1)),i=1,6)
+c        vr(1,1)=-x2(1)
+c        vr(2,1)=x2(2)
+c        vr(3,1)=x2(3)
+c        vr(4,1)=-x2(4)
+c        write (*,*) 'veps inest canviat i  est'
+c        write (*,*) (vr(i,1),i=1,6)
+c        write (*,*) (vr(i,2),i=1,6)
+c        val1=0.d0
+c        val2=0.d0
+c        do 10 i=1,6
+c        x1(i)=0.d0
+c        x2(i)=0.d0
+c        do 15 j=1,6
+c        x1(i)=x1(i)+xmo1(i,j)*vr(j,1)
+c        x2(i)=x2(i)+xmo1(i,j)*vr(j,2)
+c15      continue
+c        val1=val1+x1(i)*x1(i)
+c        val2=val2+x2(i)*x2(i)
+c10      continue
+c        val1=dsqrt(val1)
+c        val2=dsqrt(val2)
+c        write (*,*) 'vapest: de v1, de v2, de nag i invers nag1:'
+c        write (*,*) val1,val2,rr(2),1.D0/rr(1)
+c++++++++++++++++++++++++++++++++++++++++++
+
+C POSO EL VAP PETIT COM L'INVERS DEL GRAN i CANVIO L'ORDRE
+C A FI QUE LA PARELLA HIPERBOLICA SIGUI LA SEGONA
+        RR(2)=1.D0/RR(1)
+        VAUXR=RR(1)
+        VAUXI=RI(1)
+        RR(1)=RR(3)
+        RI(1)=RI(3)
+        RR(3)=VAUXR
+        RI(3)=VAUXI
+        VAUXR=RR(2)
+        VAUXI=RI(2)
+        RR(2)=RR(4)
+        RI(2)=RI(4)
+        RR(4)=VAUXR
+        RI(4)=VAUXI
+        DO 40 I=1,6
+        VAUXR=VR(I,1)
+        VAUXI=VI(I,1)
+        VR(I,1)=VR(I,3)
+        VI(I,1)=VI(I,3)
+        VR(I,3)=VAUXR
+        VI(I,3)=VAUXI
+        VAUXR=VR(I,2)
+        VAUXI=VI(I,2)
+        VR(I,2)=VR(I,4)
+        VI(I,2)=VI(I,4)
+        VR(I,4)=VAUXR
+        VI(I,4)=VAUXI
+40      CONTINUE
+C FI D'AQUESTS CANVIS MANUALS
+
+        WRITE (*,*) 'EIGENVALUES OF THE MONODROMY MATRIX: '
+C       WRITE (*,*) 'EIGENVALUES OF THE FLOQUET MATRIX: '
+        DO 12 I=1,6
+        VAM(I)=DCMPLX(RR(I),RI(I))
+        B(I,I)=CDLOG(VAM(I))/DCMPLX(PERIO,0.D0)
+        WRITE (*,*) I,RR(I),RI(I)
+C       WRITE (*,*) I,B(I,I)
+12      CONTINUE
+        DO 13 I=1,6
+        DO 14 J=1,6
+        VEM(J,I)=DCMPLX(VR(J,I),VI(J,I))
+14      CONTINUE
+13      CONTINUE
+C        WRITE (*,*) 'EIGENVECTORS OF THE MONODROMY MATRIX:'
+C        CALL ESMAC(VEM)
+
+
+
+C------------------------------------------------------------------------------------------
+C------------------------------------------------------------------------------------------
+
+
+C  STUDYING THE RIGHT ORDER AND DETERMINATION OF THE EIGENVALUES
+C  OF THE FLOQUET MATRIX.
+20      CALL FLTR1(B,VAM,NSO)
+        IF (NSO.NE.3) THEN
+        WRITE (*,*) 'FLOR. TRYING WITH A NEW ORDER IN THE'
+        WRITE (*,*) '      EIGENVALUES. NSO= ',NSO
+c faltaria un vector d'indexos per saber la permutacio i fer-ho a vem.
+        STOP
+        ENDIF
+        CALL FLTR2(VEM,NSO,IND)
+        IF (IND.NE.0) GOTO 20
+        CALL FLTR3(WS,B,VEM)
+        CALL ORSIM(VEM,VEMA,1)
+        IND=1
+        CALL TESIMP(VEMA,6,6,DD,TOLS,ERR,IND)
+        WRITE (*,*) 'FLOR. IND AND ERR SYMPECTIFICATION: ',IND,ERR
+        IF (IND.NE.0) THEN
+        WRITE (*,*) 'FLOR. THE CHANGE CAN NOT BE SYMPLECTIC'
+        STOP
+        ENDIF
+        CALL INVSIM(VEMA,VEM,6)
+        CALL ORSIM(VEMI,VEM,-1)
+        CALL ORSIM(VEM,VEMA,-1)
+C RELOG GIVES THE FLOQUET MATRIX B IN THE BASIS X1,Y1,X2,Y2,X3,Y3.
+C VEM, THE COMPLEX BASIS WHICH DIAGONALIZES B, VEMI=(VEM)**(-1).
+C BJ, THE REAL JORDAN FORM OF THE ABOVE MATRIX B, AND BJM THE REAL
+C SYMPLECTIC CHANGE OF BASIS BETWEEN THE BASIS WITH RESPECT TO BJ
+C IS REFERED AND X1,Y1,X2,Y2,X3,Y3. FINALLY THE REAL MATRICES ARE
+C STORED IN REAL ARRAYS.
+        CALL RELOG(B,VEM,VEMI,VAM,BJ,BJM)
+        DO 30 I=1,6
+        DO 31 J=1,6
+        RB(J,I)=DREAL(B(J,I))
+        RBJ(J,I)=DREAL(BJ(J,I))
+        RBJM(J,I)=DREAL(BJM(J,I))
+31      CONTINUE
+30      CONTINUE
+        WRITE (*,*) 'FLOQUET MATRIX PEL CAMP CAMPFL:'
+        CALL ESMAR(RB)
+        WRITE (*,*) 'FLOQUET MATRIX IN (REAL) JORDAN FORM:'
+        CALL ESMAR(RBJ)
+C
+C  SECOND STEP. COMPUTING THE PERIODIC MATRIX OF THE CHANGE OF
+C  COORDINATES USING THE FLOQUET THEORY.
+C  THE 20 NONZERO VALUES COMPUTED AT EQUALLY SPACED POINTS IN A
+C  PERIOD ARE STORED IN VECTOR FN BY ROUTINE CANFLR.
+C  Per evitar al maxim possible la inestabilitat l'orbita es
+C  integrada mig periode endevant i uso simetriesi per l'altre
+C  mig.
+C
+        if (ntp.ne.2*(ntp/2)) then
+        write (*,*) 'flor. Com que uso simetries ntp del Fou'
+        write (*,*) ' ha de ser parell. Has donat: ',ntp
+        stop
+        endif
+        DO 41 I=1,6
+        X(I)=Y(I)
+        DO 42 J=1,6
+        XMO(J,I)=0.D0
+42      CONTINUE
+        XMO(I,I)=1.D0
+41      CONTINUE
+        N=42
+        HMAX=PERIO/DFLOAT(NTP)
+        PAS=HMAX
+        IF (HMAX.LT.HMIN) THEN
+        WRITE (*,*) 'FLOR, SECOND STEP. HMAX<HMIN FOR RK78'
+        WRITE (*,*) '      GIVE A SMALLER NTP OR CHANGE THE'
+        WRITE (*,*) '      VALUE OF HMIN INSIDE THE ROUTINE.'
+        STOP
+        ENDIF
+        T=0.D0
+        NC=1
+        IF (IBJ.EQ.0) THEN
+        CALL CANFLR(T,X,RB,XID,FG,FN,FP,NC,NTP)
+        ELSE
+        CALL CANFLR(T,X,RBJ,RBJM,FG,FN,FP,NC,NTP)
+        ENDIF
+        H=DMIN1(0.25D0,HMAX)
+200     XNST=NC*PAS
+210     CALL RK78(T,X,42,H,HMIN,HMAX,TOL,R,BR,F,CAMPFL)
+        HA=H
+        IF (T.LT.XNST) GOTO 210
+        H=XNST-T
+        CALL RK78(T,X,42,H,HMIN,HMAX,TOL,R,BR,F,CAMPFL)
+        IF (DABS(T-XNST).GT.1.D-14) THEN
+        WRITE (*,*) 'FLOR. NO HE QUADRAT BE: ',T-XNST
+        WRITE (*,*) '      BUSCANT EL PUNT: ',NC+1
+        STOP
+        ENDIF
+        NC=NC+1
+        IF (JMOD(NC,50).EQ.0)
+     $             WRITE (*,*) 'FLOR. STORING POINT',NC,' OF ',NTP
+        IF (IBJ.EQ.0) THEN
+        CALL CANFLR(T,X,RB,XID,FG,FN,FP,NC,NTP)
+        CALL SIMET(T,X,TA,XA,PERIO)
+        NCA=NTP-NC+2
+        CALL CANFLR(TA,XA,RB,XID,FG,FN,FP,NCA,NTP)
+        ELSE
+        CALL CANFLR(T,X,RBJ,RBJM,FG,FN,FP,NC,NTP)
+        CALL SIMET(T,X,TA,XA,PERIO)
+        NCA=NTP-NC+2
+        CALL CANFLR(TA,XA,RBJ,RBJM,FG,FN,FP,NCA,NTP)
+        ENDIF
+        H=HA
+        IF (NC.LT.NTP/2+1) GOTO 200
+C
+C PERFORMING THE FOURIER ANALYSIS OF THE GENERATING FUNCTION G1
+C AND THE FLOQUET CHANGE OF VARIABLES.
+C
+        DO 60 I=1,NT1
+        LLOC1=(I-1)*NTP+1
+        LLOC2=(I-1)*LOF1+1
+        CALL FOUC(FG(LLOC1),NTP,G1(LLOC2),LOF1)
+60      CONTINUE
+        DO 61 I=1,NFN
+        LLOC1=(I-1)*NTP+1
+        LLOC2=(I-1)*LOF1+1
+        CALL FOUC(FN(LLOC1),NTP,CVXY(LLOC2),LOF1)
+61      CONTINUE
+        DO 62 I=1,NT2
+        LLOC1=(I-1)*NTP+1
+        LLOC2=(I-1)*LOF2+1
+        CALL FOUC(FP(LLOC1),NTP,CVP(LLOC2),LOF2)
+62      CONTINUE
+        RETURN
+        END
+
+
+        SUBROUTINE SIMET(T,X,TA,XA,PERIO)
+C****************************************************************
+C Simetria de la matriu del canvi periodic de Floquet
+C per temps T i PERIO-T (e.d. -T)
+C****************************************************************
+        IMPLICIT REAL*8 (A-H,O-Z)
+        DIMENSION X(42),XA(42)
+        TA=PERIO-T
+        DO 1 I=1,42
+        XA(I)=X(I)
+1       CONTINUE
+        XA(2)=-XA(2)
+        XA(3)=-XA(3)
+        XA(8)=-XA(8)
+        XA(9)=-XA(9)
+        XA(13)=-XA(13)
+        XA(16)=-XA(16)
+        XA(19)=-XA(19)
+        XA(22)=-XA(22)
+        XA(26)=-XA(26)
+        XA(27)=-XA(27)
+        XA(36)=-XA(36)
+        XA(41)=-XA(41)
+        RETURN
+        END
+
+
+
+        SUBROUTINE CANFLR(T,X,RBJ,RBJM,FG,FN,FP,NC,NTP)
+C****************************************************************
+C  THIS ROUTINE STORES THE VALUES OF THE GENERATING FUNCTION AND
+C  THE FLOQUET CHANGE OF COORDINATES AT EACH STEP OF TIME IN
+C  ORDER TO PERFORM A FOURIER ANALYSIS.
+C  TO COMPLETE A SYMPLECTIC CHANGE OF COORDINATES AN HOMOGENEOUS
+C  POLYMOMIAL OF DEGREE TWO MUST BE ADDED TO THE HAMILTONIAN DUE TO
+C  THE CHANGE OF THE MOMENTA ASSOCIATED WITH THE ANGULAR VARIABLE.
+C  THE EVALUATIONS OF THIS POLYNOMIAL ARE STORED IN VECTOR FP IN
+C  ORDER TO PERFORM LATER A FOURIER ANALYSIS OF ITS 13 COMPONENTS.
+C
+C  INPUT:
+C
+C   T   THE ACTUAL TIME.
+C  X(*) POSITION, MOMENTA AND VARIATIONAL VARIABLES AT THE TIME
+C       T IN THE BASIS: (X,PX,Y,PY,Z,PZ).
+C RBJ(*,*) THE FLOQUET MATRIX (LOGARITHM OF THE MONODROMY MATRIX)
+C RBJM(*,*) THE CHANGE OF BASIS BETWEEN THE ONE IN WHICH RBJ IS
+C           EXPRESSED AND (X,PX,Y,PY,Z,PZ).
+C  NC   THE STEP WE ARE PERFORMING, IT TAKES THE VALUES FROM 1
+C       TO NTP.
+C  NTP  THE NUMBER OF POINTS THAT THIS ROUTINE WILL BE CALLED.
+C
+C  OUTPUT: (THESE VALUES ARE COMPLEX*16)
+C
+C  FG(*)  CONTAINS THE EVALUATION OF THE GENERATING FUNCTION G1
+C         (4 FUNCTIONS IN NTP POINTS).
+C  FN(*)  CONTAINS THE EVALUATION OF THE FLOQUET CHANGE OF
+C         VARIABLES RELATED TO THE VARIABLES (X,PX,Y,PY,Z,PZ)
+C         (20 FUNCTIONS IN NTP POINTS).
+C  FP(*)  CONTAINS THE EVALUATION OF THE FLOQUET CHANGE OF
+C         VARIABLES RELATED TO THE FICTICIOUS ACTION.
+C         (13 FUNCTIONS IN NTP POINTS).
+C****************************************************************
+        IMPLICIT REAL*8 (A-H,O-Z)
+        DIMENSION XMO(6,6),RBJ(6,6),P(6,6),P11(3,3),P12(3,3),P21(3,3)
+        DIMENSION P22(3,3),DXF1(3,3),DXF2(3,3),DYF1(3,3),DYF2(3,3)
+        DIMENSION X(42),Q(6,6),Q1(3,3),Q2(3,3),Q3(3,3),PA(6,6)
+        DIMENSION YA(42),RBJM(6,6),XA(42),RBJS(6,6)
+        COMPLEX*16 FN(1),FP(1),FG(1)
+C++++++++++++
+C       COMPLEX*16 PSS(6,6),DD(6)
+C+++++++++++
+        EQUIVALENCE (YA(7),PA(1,1)),(XA(7),XMO(1,1))
+C
+C STORING THE PART CORRESPONDING TO THE GENERATING FUNCTION G1.
+C
+        DO 15 I=1,42
+        XA(I)=X(I)
+15      CONTINUE
+        FG(NC)=DCMPLX(-XA(2),0.D0)
+        FG(NTP+NC)=DCMPLX(XA(1),0.D0)
+        FG(2*NTP+NC)=DCMPLX(-XA(4),0.D0)
+        FG(3*NTP+NC)=DCMPLX(XA(3),0.D0)
+C COMPOSING THE FLOQUET CHANGE OF COORDINATES WITH THE CHANGE OF
+C COORDINATES WHICH PUTS THE FLOQUET MATRIX IN ITS REAL JORDAN
+C FORM RBJ. STORED IN PA IN THE BASIS X1,Y1,X2,Y2,X3,Y3 AND IN P
+C IN THE  BASIS X1,X2,X3,Y1,Y2,Y3
+        DO 10 J=1,6
+        DO 11 I=1,6
+        PA(I,J)=XMO(I,1)*RBJM(1,J)
+        DO 12 K=2,6
+        PA(I,J)=PA(I,J)+XMO(I,K)*RBJM(K,J)
+12      CONTINUE
+11      CONTINUE
+10      CONTINUE
+        CALL ORSIMR(PA,P,1)
+C+++++++++++
+C       IF (JMOD(NC,50).EQ.0.OR.NC.EQ.1.OR.NC.EQ.NTP) THEN
+C       WRITE (*,*) 'CANFLR. THE MATRIX XMO FOR NC=',NC
+C       CALL ESMAR(XMO)
+C       WRITE (*,*) 'CANFLR. THE MATRIX RBJM FOR NC=',NC
+C       CALL ESMAR(RBJM)
+C       WRITE (*,*) 'CANFLR. THE MATRIX PA FOR NC=',NC
+C       CALL ESMAR(PA)
+C       WRITE (*,*) 'CANFLR. THE MATRIX P FOR NC=',NC
+C       CALL ESMAR(P)
+C       WRITE (*,*) 'CANFLR. SYMPLECTICITY TEST TO P FOR NC=',NC
+C       DO 75 I=1,6
+C       DO 76 J=1,6
+C       PSS(J,I)=DCMPLX(P(J,I),0.D0)
+C76     CONTINUE
+C75     CONTINUE
+C       INDI=0
+C       CALL TESIMP(PSS,6,6,DD,1.D-10,ERR,INDI)
+C       WRITE (*,*) 'INDI AND ERROR OF TESIMP: ',INDI,ERR
+C       WRITE (*,*) 'VALUES OF D(I): '
+C       DO 78 I=1,3
+C       WRITE (*,*) 'DD(',I,')=',DD(I)
+C78     CONTINUE
+C        ENDIF
+C+++++++++++
+        DO 20 J=1,3
+        DO 21 I=1,3
+        P11(I,J)=P(I,J)
+        P12(I,J)=P(I,J+3)
+        P21(I,J)=P(I+3,J)
+        P22(I,J)=P(I+3,J+3)
+21      CONTINUE
+20      CONTINUE
+C STORING THE CHANGE OF COORDINATES IN THE COMPONENTS X,Y.
+        DO 1 I=1,4
+        DO 2 J=1,4
+        NT=4*(I-1)+J
+        FN((NT-1)*NTP+NC)=DCMPLX(PA(I,J),0.D0)
+2       CONTINUE
+1       CONTINUE
+        DO 3 I=5,6
+        DO 4 J=5,6
+        NT=2*(I-5)+J+12
+        FN((NT-1)*NTP+NC)=DCMPLX(PA(I,J),0.D0)
+4       CONTINUE
+3       CONTINUE
+C
+C COMPUTING THE CHANGE OF COORDINATES FOR THE ADDED MOMENTUM.
+C
+        DO 22 I=1,6
+        XA(I)=X(I)
+        DO 23 J=1,6
+        XMO(J,I)=0.D0
+23      CONTINUE
+        XMO(I,I)=1.D0
+22      CONTINUE
+C        CALL BICIRH(T,XA,42,YA)
+        CALL BICOHE(T,XA,42,YA)
+        CALL ORSIMR(PA,Q,1)
+C+++++++++++
+C       IF (JMOD(NC,50).EQ.0) THEN
+C       WRITE (*,*) 'CANFL. MATRIX Q=(Q2(t), 2*Q3 / -2*Q1, -Q2)'
+C       WRITE (*,*) '        FOR NC=',NC
+C       CALL ESMAR(Q)
+C       ENDIF
+C+++++++++++
+        DO 30 J=1,3
+        DO 31 I=1,3
+        Q1(I,J)=-0.5D0*Q(I+3,J)
+        Q2(I,J)=-1.D0*Q(I+3,J+3)
+        Q3(I,J)=0.5D0*Q(I,J+3)
+        DXF1(I,J)=0.D0
+        DXF2(I,J)=0.D0
+        DYF1(I,J)=0.D0
+        DYF2(I,J)=0.D0
+31      CONTINUE
+30      CONTINUE
+        CALL AUXPTR(P11,Q1,P11,DXF1)
+        CALL AUXPTR(P11,Q2,P21,DXF1)
+        CALL AUXPTR(P21,Q3,P21,DXF1)
+        CALL AUXPTR(P11,Q1,P12,DXF2)
+        CALL AUXPTR(P11,Q2,P22,DXF2)
+        CALL AUXPTR(P21,Q3,P22,DXF2)
+        CALL AUXPTR(P12,Q1,P11,DYF1)
+        CALL AUXPTR(P12,Q2,P21,DYF1)
+        CALL AUXPTR(P22,Q3,P21,DYF1)
+        CALL AUXPTR(P12,Q1,P12,DYF2)
+        CALL AUXPTR(P12,Q2,P22,DYF2)
+        CALL AUXPTR(P22,Q3,P22,DYF2)
+        CALL ORSIMR(RBJ,RBJS,1)
+        DO 32 J=1,3
+        DO 33 I=1,3
+        DXF1(I,J)=-0.5D0*RBJS(I+3,J)-DXF1(I,J)
+        DXF2(I,J)=-0.5D0*RBJS(I+3,J+3)-DXF2(I,J)
+        DYF1(I,J)=0.5D0*RBJS(I,J)-DYF1(I,J)
+        DYF2(I,J)=0.5D0*RBJS(I,J+3)-DYF2(I,J)
+33      CONTINUE
+32      CONTINUE
+        FP(NC)=DCMPLX(DXF1(1,1),0.D0)
+        FP(NTP+NC)=DCMPLX(DYF1(1,1)+DXF2(1,1),0.D0)
+        FP(2*NTP+NC)=DCMPLX(DYF2(1,1),0.D0)
+        FP(3*NTP+NC)=DCMPLX(DXF1(1,2)+DXF1(2,1),0.D0)
+        FP(4*NTP+NC)=DCMPLX(DYF1(1,2)+DXF2(2,1),0.D0)
+        FP(5*NTP+NC)=DCMPLX(DXF1(2,2),0.D0)
+        FP(6*NTP+NC)=DCMPLX(DYF1(2,1)+DXF2(1,2),0.D0)
+        FP(7*NTP+NC)=DCMPLX(DYF2(1,2)+DYF2(2,1),0.D0)
+        FP(8*NTP+NC)=DCMPLX(DYF1(2,2)+DXF2(2,2),0.D0)
+        FP(9*NTP+NC)=DCMPLX(DYF2(2,2),0.D0)
+        FP(10*NTP+NC)=DCMPLX(DXF1(3,3),0.D0)
+        FP(11*NTP+NC)=DCMPLX(DYF1(3,3)+DXF2(3,3),0.D0)
+        FP(12*NTP+NC)=DCMPLX(DYF2(3,3),0.D0)
+        RETURN
+        END
+
+
+
+
+
+
+
+        SUBROUTINE RELOG(B,VEM,VEMI,VAM,BJ,BJM)
+C********************************************************************
+C GIVEN THE COMPLEX DIAGONAL FORM OF THE FLOQUET MATRIX IN B(6,6),
+C THE COMPLEX BASIS WITH RESPECT TO (X,PX,Y,PY,Z,PZ) WHICH GIVES
+C THE ABOVE DIAGONAL FORM IN VEM(6,6) AND ITS INVERSE IN VEMI(*,*),
+C THIS ROUTINE RETURNS B(6,6) A COMPLEX MATRIX CONTAINING THE
+C REAL FORM OF THE FLOQUET MATRIX IN THE BASIS (X,PX,Y,PY,Z,PZ).
+C VAM(6) THE (COMPLEX) EIGENVALUES OF B(6,6). BJ(6,6) A COMPLEX
+C MATRIX CONTAINING THE REAL JORDAN FORM OF THE OUTPUT MATRIX
+C B(6,6) AND BJM(*,*) A COMPLEX MATRIX CONTAINING THE (REAL) CHANGE
+C OF BASIS BETWEEN THE OUTPUT MATRICES B(6,6) AND BJ(6,6). (THIS
+C IS BJ=BJM**(-1)*B*BJM.
+C********************************************************************
+        IMPLICIT COMPLEX*16 (A-H,O-Z)
+        REAL*8 TOLR,TOLS,ERR,AUXR,PRM,PIM
+        PARAMETER (TOLR=1.D-10,TOLS=1.D-10)
+        DIMENSION B(6,6),VEM(6,6),VEMI(6,6),VEMA(6,6),VAM(6),VAP(6)
+        DIMENSION BJ(6,6),BJM(6,6),BJI(6,6),DD(6)
+        DO 1 I=1,6
+        VAP(I)=B(I,I)
+1       CONTINUE
+        DO 2 I=1,6
+        DO 3 J=1,6
+        VEMA(J,I)=DCMPLX(0.D0,0.D0)
+3       CONTINUE
+        VEMA(I,I)=VAP(I)
+        VAM(I)=VAP(I)
+2       CONTINUE
+        CALL PR3(VEMA,VEMI,VEM)
+        WRITE (*,*) 'LOGARITHM OF THE MONODROMY MATRIX: '
+        WRITE (*,*) '(IT MUST BE REAL).'
+        CALL ESMAC(VEMA)
+        AUXR=0.D0
+        DO 20 I=1,6
+        DO 21 J=1,6
+        B(J,I)=VEMA(J,I)
+        IF (AUXR.LT.DABS(DIMAG(B(J,I)))) AUXR=DABS(DIMAG(B(J,I)))
+21      CONTINUE
+20      CONTINUE
+        WRITE (*,*) 'RELOG. MAX IMAGINARY PART IN THE REAL '
+        WRITE (*,*) '       FLOQUET MATRIX: ',AUXR
+        IF (AUXR.GT.TOLR) THEN
+        WRITE (*,*) '       THE LOGARITHM OF THE MONODROMY MATRIX.'
+        WRITE (*,*) '       (THE FLOQUET MATRIX) IT IS NOT REAL.'
+        WRITE (*,*) '       (USED THRESHOLD TOLR: ',TOLR,')'
+        STOP
+        ENDIF
+C
+C COMPUTING THE JORDAN FORM AND ITS BASIS
+C
+        LLOC=1
+        NCOM=0
+40      AUXR=DIMAG(VAM(LLOC))
+        IF (AUXR.GT.TOLR) THEN
+C COMPLEX EIGENVALUES
+        IF (AUXR.GT.100*TOLR.AND.AUXR.LT.TOLR) THEN
+        WRITE (*,*) 'RELOG. WARNING !!!!!!!!!!!'
+        WRITE (*,*) '       EIGENVALUE WITH SMALL IMAGINARY PART:'
+        WRITE (*,*) '       ',VAM(LLOC)
+        WRITE (*,*) '       CONSIDERED COMPLEX !'
+        ENDIF
+        DO 32 J=1,6
+        AUXR=DREAL(VEM(J,LLOC))
+        BJM(J,LLOC)=DCMPLX(AUXR,0.D0)
+        AUXR=DIMAG(VEM(J,LLOC))
+        BJM(J,LLOC+1)=DCMPLX(AUXR,0.D0)
+32      CONTINUE
+        LLOC=LLOC+2
+        NCOM=NCOM+1
+        ELSE
+C REAL EIGENVALUES
+        PRM=0.D0
+        PIM=0.D0
+        DO 33 J=1,6
+        AUXR=DABS(DREAL(VEM(J,LLOC)))
+        IF (PRM.LT.AUXR) PRM=AUXR
+        AUXR=DABS(DIMAG(VEM(J,LLOC)))
+        IF (PIM.LT.AUXR) PIM=AUXR
+33      CONTINUE
+        DO 34 J=1,6
+        AUXR=DREAL(VEM(J,LLOC))
+        IF (PIM.GT.PRM) AUXR=DIMAG(VEM(J,LLOC))
+        BJM(J,LLOC)=DCMPLX(AUXR,0.D0)
+34      CONTINUE
+        LLOC=LLOC+1
+        ENDIF
+        IF (LLOC.LE.6) GOTO 40
+C SYMPLECTIFYING THE CHANGE OF BASIS (IT IS DONE IN ROUTINE SIMPER)
+        WRITE (*,*) 'RELOG. NUMBER OF COUPLES OF CMPLX EIGENV.: ',NCOM
+        CALL ORSIM(BJM,VEMA,1)
+        IND=0
+        CALL TESIMP(VEMA,6,6,DD,TOLS,ERR,IND)
+        WRITE (*,*) 'RELOG. IND AND ERR SYMPECTIFICATION: ',IND,ERR
+        WRITE (*,*) 'VALUES OF DD'
+        WRITE (*,*) 'DD(1)=',DD(1)
+        WRITE (*,*) 'DD(2)=',DD(2)
+        WRITE (*,*) 'DD(3)=',DD(3)
+        IF (IND.NE.0) THEN
+        WRITE (*,*) 'RELOG. THE CHANGE CAN NOT BE SYMPLECTIC'
+        STOP
+        ENDIF
+        CALL SIMPER(VEMA,DD,6)
+C COMPUTING THE JORDAN FORM OF THE FLOQUET MATRIX.
+        CALL INVSIM(VEMA,BJM,6)
+        CALL ORSIM(BJI,BJM,-1)
+        CALL ORSIM(BJM,VEMA,-1)
+        DO 51 I=1,6
+        DO 52 J=1,6
+        BJ(J,I)=B(J,I)
+52      CONTINUE
+51      CONTINUE
+        CALL PR3(BJ,BJM,BJI)
+C        WRITE (*,*) 'JORDAN FORM OF THE FLOQUET MATRIX'
+C        CALL ESMAC(BJ)
+        RETURN
+        END
+
+
+
+
+
+        SUBROUTINE CAMPFL(T,X,N,F)
+C****************************************************************
+C  THIS ROUTINE COMPUTES THE VECTORFIELD ASSOCIATED WITH THE
+C  DIFFERENTIAL EQUATIONS WHICH GIVE THE FLOQUET CHANGE OF
+C  COORDINATES. THE DIFFERENTIAL EQUATIONS ARE MDOT=A*M-M*B
+C  WHERE A IS A 6*6 PERIODIC MATRIX (THE DIFFERENTIAL OF THE
+C  VARIATIONAL EQUATIONS OF THE INITIAL VECTORFIELD (BICIRH)) AND
+C  B IS THE FLOQUET MATRIX (A LOGARITHM OF THE MONODROMY MATRIX
+C  DIVIDED BY THE PERIOD OF THE ORBIT), WHICH COMES INTO THIS
+C  ROUTINE THROUGHT COMMON /BASEF/ (THE MATRIX RB).
+C  THE MATRIX M AT THE TIME T IS OBTAINED FROM X(I) I=7,42 STORED
+C  IN COLUMS. THE VECTORFIELD MDOT IS GIVEN IN F(I) I=7,42 STORED
+C  AS WELL IN COLUMNS. THE VALUES X(I) I=1,6 ARE THE CURRENT POINT
+C  OF THE PERIODIC ORBIT, AND IN F(I) I=1,6 IT GIVES THE VECTORFIELD
+C  BICIRH.
+C****************************************************************
+        IMPLICIT REAL*8 (A-H,O-Z)
+        DIMENSION F(42),X(42),XF(6,6),XX(6,6),XA(42),FA(42)
+        COMMON /BASEF/RB(6,6)
+        EQUIVALENCE (FA(7),XF(1,1)),(XA(7),XX(1,1))
+        DO 5 I=1,42
+        XA(I)=X(I)
+5       CONTINUE
+C        CALL BICIRH(T,X,N,FA)
+        CALL BICOHE(T,X,N,FA)
+        DO 1 I=1,6
+        DO 2 J=1,6
+        DO 3 K=1,6
+        XF(J,I)=XF(J,I)-XX(J,K)*RB(K,I)
+3       CONTINUE
+2       CONTINUE
+1       CONTINUE
+        DO 6 I=1,42
+        F(I)=FA(I)
+6       CONTINUE
+        RETURN
+        END
+
+
+
+
+
+        SUBROUTINE FLTR1(B,VAM,NSO)
+C****************************************************************
+C THE COMPLEX DIAGONAL FORM OF THE FLOQUET MATRIX, MUST CONTAIN THE
+C EIGENVALUES ACCORDING TO THE ORDER OF THE CONJUGATE VARIABLES,
+C IN OUR CASE SINCE THE ORDER IS X,PX,Y,PY,Z,PZ, IT MUST
+C SATISFY B(2*I-1,2*I-1)+B(2*I,2*I)=0 FOR I=1,3
+C THIS ROUTINE DOES A CHANGE IN THE THE DIAGONAL OF B
+C IN ORDER TO FULLFIL THE ABOVE CONDITION. IT CHANGES AS WELL
+C THE ORDER OF THE THIRD COUPLE ACCORDING TO NSO.
+C****************************************************************
+        IMPLICIT COMPLEX*16 (A-H,O-Z)
+        REAL*8 TOL,XMD
+C       PARAMETER (TOL=1.D-10)
+        PARAMETER (TOL=1.D-8)
+        DIMENSION B(6,6),VAM(6),LLOC(6),AU1(6),AU2(6)
+        DO 1 I=1,6
+            LLOC(I)=0
+1       CONTINUE
+        DO 2 I=1,5,2
+        DO 3 J=1,6
+        LLOC(I)=J
+        DO 4 K=1,I-1
+        IF (LLOC(K).EQ.J) GOTO 3
+4       CONTINUE
+        GOTO 5
+3       CONTINUE
+5       XMD=1.D10
+        DO 6 J=1,6
+        IF (XMD.GT.CDABS(B(J,J)+B(LLOC(I),LLOC(I)))) THEN
+        LL=J
+        XMD=CDABS(B(J,J)+B(LLOC(I),LLOC(I)))
+        ENDIF
+6       CONTINUE
+        IF (XMD.GT.TOL) THEN
+        WRITE (*,*) 'FLTR1. ASSOCIATED EIGENVALUE NOT FOUND'
+        WRITE (*,*) '        XMD and TOL: ',XMD,TOL
+        WRITE (*,*) '        VECTOR LLOC: ',LLOC
+        WRITE (*,*) '        EIGENVALUES:'
+        DO 10 K=1,6
+        WRITE (*,*) K,B(K,K)
+10      CONTINUE
+        STOP
+        ENDIF
+        LLOC(I+1)=LL
+2       CONTINUE
+        DO 11 I=1,5
+        DO 12 J=I+1,6
+        IF (LLOC(I).EQ.LLOC(J)) THEN
+        WRITE (*,*) 'FLTR1. COUPLES NOT DEFINED WITHIN TOL'
+        WRITE (*,*) '        VECTOR LLOC: ',LLOC
+        WRITE (*,*) '        EIGENVALUES:'
+        DO 13 K=1,6
+        WRITE (*,*) K,B(K,K)
+13      CONTINUE
+        STOP
+        ENDIF
+12      CONTINUE
+11      CONTINUE
+        IF (NSO.EQ.3) GOTO 150
+        LL=LLOC(6)
+        LLOC(6)=LLOC(2*NSO)
+        LLOC(2*NSO)=LL
+        LL=LLOC(5)
+        LLOC(5)=LLOC(2*NSO-1)
+        LLOC(2*NSO-1)=LL
+        WRITE(*,*) 'FLTR1. VECTOR LLOC OF SORTING: ',LLOC
+150     DO 160 I=1,6
+        AU1(I)=B(I,I)
+        AU2(I)=VAM(I)
+160     CONTINUE
+        DO 200 I=1,6
+        B(I,I)=AU1(LLOC(I))
+        VAM(I)=AU2(LLOC(I))
+200     CONTINUE
+        WRITE (*,*) 'FLTR1. NSO=',NSO
+        WRITE (*,*) '        TEST OF THE COUPLES:'
+        WRITE (*,*) B(1,1)+B(2,2)
+        WRITE (*,*) B(3,3)+B(4,4)
+        WRITE (*,*) B(5,5)+B(6,6)
+        RETURN
+        END
+
+
+
+
+        SUBROUTINE FLTR2(VEM,NSO,IND)
+C****************************************************************
+C  THIS ROUTINE DOES A SECOND TEST. THE OUT OF PLANE COMPONENTS
+C  (Z,PZ) ARE DECOUPLED FROM THE IN PLANE ONES X,PX,Y,PY.
+C  ALL THE MANIPULATOR ASSUMES THAT THE DECOUPLED ONES ARE Z,PZ.
+C  IF THE ORDER IN THE EIGENVALUES IS NOT THE RIGHT ONE, THE LAST
+C  ASSUMPTION IS NOT FULLFILLED. THIS ROUTINE TESTS IF THE ORDER
+C  IS A RIGHT ONE, AND IF NOT PROPOSES ANOTHER CHANGE VIA VARIABLE
+C  NSO AND THE INDICATOR IND.
+C****************************************************************
+        IMPLICIT COMPLEX*16 (A-H,O-Z)
+        REAL*8 TOL
+        PARAMETER (TOL=1.D-10)
+        DIMENSION VEM(6,6)
+        IND=0
+        DO 1 I=5,6
+        DO 2 J=1,4
+        IF (CDABS(VEM(I,J)).GT.TOL.OR.CDABS(VEM(J,I)).GT.TOL) IND=IND+1
+2       CONTINUE
+1       CONTINUE
+        IF (IND.NE.0) THEN
+        IF (NSO.EQ.3) THEN
+        NSO=1
+        ELSE
+        IF (NSO.EQ.1) THEN
+        NSO=2
+        ELSE
+        WRITE (*,*) 'FLTR2. THE OUT OF PLANE VARIABLES SEEM TO BE'
+        WRITE (*,*) '        RELATED WITH THE IN-PLANE. THE PROGRAM'
+        WRITE (*,*) '        CAN NOT DEAL WITH THIS FACT.'
+        ENDIF
+        ENDIF
+        ENDIF
+        RETURN
+        END
+
+
+
+
+        SUBROUTINE FLTR3(WS,B,VEM)
+C****************************************************************
+C THE EIGENVALUES OF THE FLOQUET MATRIX ARE THE (COMPLEX) LOGARITHMS
+C OF THE EIGENVALUES OF THE MONODROMY MATRIX DIVIDED BY THE PERIOD
+C OF THE PERTURBATION. THESE APPEAR IN COUPLES WITH ITS SUM EQUAL
+C TO ZERO. IF WS IS THE FREQUENCY OF THE PERTURBATION, THE
+C EIGENVALUES OF THE FLOQUET MATRIX ARE DETERMINED EXCEPT A MULTIPLE
+C OF WS IN THE IMAGINARY PART.
+C GIVEN THE MATRIX B, WHICH IS A DIAGONAL MATRIX CONTAINING THE
+C CURRENT EIGENVALUES OF THE FLOQUET MATRIX IN ITS DIAGONAL, AND THE
+C FREQUENCY OF THE PERTURBATION, THIS ROUTINE ASKS INTERACTIVELY
+C THE DESIRED DETERMINATION OF ITS VALUES. THE MATRIX B IS RETURNED
+C WITH THESE NEW VALUES.
+C IT ALSO ASKS WHICH MEMBER OF THE COUPLE IS DESIRED IN THE DIAGONAL
+C FORM. IF ANY PERMUTATION IS DESIRED, IT MODIFIES THE ORDER IN THE
+C COUPLE AND THE MATRIX VEM WHICH AT THE INPUT MUST CONTAIN THE
+C EIGENVALUES OF THE MONODROMY MATRIX IN THE BASIS X1,Y1,X2,Y2,X3,Y3.
+C****************************************************************
+        IMPLICIT COMPLEX*16 (A-H,O-Z)
+        REAL*8 WS
+        DIMENSION NV(3),B(6,6),VEM(6,6)
+        WRITE (*,*)
+        WRITE (*,*) '********* ROUTINE FLTR3 ************'
+        WRITE (*,*) '     +++++ FIRST STEP +++++'
+        WRITE (*,*)
+        WRITE (*,*) 'THE EIGENVALUES OF THE FLOQUET MATRIX ARE THE'
+        WRITE (*,*) '(COMPLEX) LOGARITHMS OF THE EIGENVALUES OF THE'
+        WRITE (*,*) 'MONODROMY MATRIX DIVIDED BY THE PERIOD OF THE'
+        WRITE (*,*) 'PERTURBATION. THESE APPEAR IN COUPLES WITH '
+        WRITE (*,*) 'ITS SUM EQUAL TO ZERO.'
+        WRITE (*,*) 'IF WS IS THE FREQUENCY OF THE PERTURBATION,'
+        WRITE (*,*) 'THE EIGENVALUES OF THE FLOQUET MATRIX ARE'
+        WRITE (*,*) 'DETERMINED EXCEPT A MULTIPLE OF WS IN THE '
+        WRITE (*,*) 'IMAGINARY PART.'
+        WRITE (*,*) 'NEXT, YOU WILL BE ASKED FOR THREE INTEGER VALUES.'
+        WRITE (*,*) 'EACH INTEGER VALUE TIMES WS WILL BE ADDED TO THE'
+        WRITE (*,*) 'IMAGINARY PART OF THE FIRST EIGENVALUE OF ITS'
+        WRITE (*,*) 'RESPECTIVE COUPLE.'
+        WRITE (*,*) 'YOU MUST ANSWER: 0 0 0 WHEN YOU WILL HAVE THE'
+        WRITE (*,*) 'RIGHT DETERMINATION.'
+        WRITE (*,*) 'MAY BE WITH YOUR CHOICE IT IS NOT POSSIBLE TO'
+        WRITE (*,*) 'FIND A SYMPLECTIC CHANGE OR TO OBTAIN A REAL'
+        WRITE (*,*) 'FLOQUET MATRIX. IN THIS CASE THE PROGRAM WILL'
+        WRITE (*,*) 'STOP WHEN COMPUTING THE FLOQUET MATRIX.'
+50      WRITE (*,*)
+        WRITE (*,*)'THE LOGARITHMS OF THE EIGENVALUES OF THE MONODROMY'
+        WRITE (*,*) 'MATRIX ARE THE FOLLOWING THREE (COMPLEX) COUPLES:'
+        WRITE (*,*)
+        DO 10 I=1,3
+        WRITE (*,100) I,B(2*I-1,2*I-1)
+        WRITE (*,101) B(2*I,2*I)
+100     FORMAT (I4,3X,1H(,D23.15,1H,,D23.15,1H))
+101     FORMAT (4X,3X,1H(,D23.15,1H,,D23.15,1H))
+10      CONTINUE
+        WRITE (*,*)
+        WRITE(*,*)'CHOOSE THE APROPIATE DETERMINATION (3 INT. VALUES):'
+        WRITE (*,102) WS
+102     FORMAT ('(FREQUENCY OF THE PERTURBATION, WS= ',D21.15,')')
+        READ (*,*) NV(1),NV(2),NV(3)
+        IF (NV(1).EQ.0.AND.NV(2).EQ.0.AND.NV(3).EQ.0) GOTO 20
+        DO 12 I=1,3
+        B(2*I-1,2*I-1)=B(2*I-1,2*I-1)+DCMPLX(0.D0,NV(I)*WS)
+        B(2*I,2*I)=B(2*I,2*I)-DCMPLX(0.D0,NV(I)*WS)
+12      CONTINUE
+        GOTO 50
+20      WRITE (*,*)
+C
+C   IN THE REAL CASE THIS SECOND STEP IS NOT VERY USEFULL, BUT CAN BE
+C   USED DELETING THE C's OF THE LINES.
+C
+C        WRITE (*,*) '     +++++ SECOND STEP +++++'
+C        WRITE (*,*)
+C        WRITE (*,*) 'YOU CAN CHOOSE WHICH MEMBER OF THE COUPLES'
+C        WRITE (*,*) 'OF THE EIGENVALUES (ONE OR ITS OPPOSITE IN SIGN)'
+C        WRITE (*,*) 'YOU PREFER IN THE DIAGONAL FORM OF THE SECOND'
+C        WRITE (*,*) 'ORDER PART OF THE HAMILTONIAN.'
+C        WRITE (*,*) 'NEXT, YOU WILL BE ASKED FOR AN INTEGER VALUE, I.'
+C        WRITE (*,*) 'IT WILL MEAN THAT THE OTHER MEMBER OF THE COUPLE'
+C        WRITE (*,*) 'NUMBER I MUST APPEAR IN THE DIAGONAL FORM.'
+C        WRITE (*,*) 'GIVE 0 WHEN YOU HAVE THE DESIRED VALUES.'
+C        WRITE (*,*)
+C60      WRITE (*,*) 'MEMBERS OF EACH COUPLE IN THE DIAGONAL FORM:'
+C        WRITE (*,*)
+C        WRITE (*,100) 1,B(1,1)
+C        WRITE (*,100) 2,B(3,3)
+C        WRITE (*,100) 3,B(5,5)
+C        WRITE (*,*)
+C        WRITE(*,*)'GIVE THE ONE YOU WANT TO CHANGE. (0= IT IS OK)'
+C        READ (*,*) NC
+C        IF (NC.EQ.0) GOTO 500
+C        IF (NC.GT.3.OR.NC.LT.0) GOTO 60
+C        NC=2*NC-1
+C        DO 40 I=1,6
+C        VAL=VEM(I,NC)
+C        VEM(I,NC)=VEM(I,NC+1)
+C        VEM(I,NC+1)=VAL
+C40      CONTINUE
+C        VAL=B(NC,NC)
+C        B(NC,NC)=B(NC+1,NC+1)
+C        B(NC+1,NC+1)=VAL
+C        GOTO 60
+C500     WRITE (*,*)
+        WRITE (*,*) '********** EXIT FLTR3 *************'
+        RETURN
+        END
+
+
+
+
+
+        SUBROUTINE PR3(FM,VEM,VEMI)
+C****************************************************************
+C  GIVEN FM,VEM AND VEMI COMPLEX MATRICES 6*6,
+C  IT RETURNS FM=VEMI*FM*VEM
+C****************************************************************
+        IMPLICIT COMPLEX*16 (A-H,O-Z)
+        DIMENSION FM(6,6),VEM(6,6),VEMI(6,6),AUX(6,6)
+        DO 1 I=1,6
+        DO 2 J=1,6
+        AUX(J,I)=DCMPLX(0.D0,0.D0)
+        DO 3 K=1,6
+        AUX(J,I)=AUX(J,I)+FM(J,K)*VEM(K,I)
+3       CONTINUE
+2       CONTINUE
+1       CONTINUE
+        DO 4 I=1,6
+        DO 5 J=1,6
+        FM(J,I)=DCMPLX(0.D0,0.D0)
+        DO 6 K=1,6
+        FM(J,I)=FM(J,I)+VEMI(J,K)*AUX(K,I)
+6       CONTINUE
+5       CONTINUE
+4       CONTINUE
+        RETURN
+        END
+
+
+
+
+        SUBROUTINE AUXPTR(A,B,C,D)
+C****************************************************************
+C  GIVEN FOUR 3*3 REAL MATRICES A,B,C IT COMPUTES D=D+A(t)*B*C.
+C****************************************************************
+        IMPLICIT REAL*8 (A-H,O-Z)
+        DIMENSION A(3,3),B(3,3),C(3,3),D(3,3),AUX(3,3)
+        DO 1 J=1,3
+        DO 2 I=1,3
+        AUX(I,J)=A(1,I)*B(1,J)
+        DO 3 K=2,3
+        AUX(I,J)=AUX(I,J)+A(K,I)*B(K,J)
+3       CONTINUE
+2       CONTINUE
+1       CONTINUE
+        DO 10 J=1,3
+        DO 11 I=1,3
+        DO 12 K=1,3
+        D(I,J)=D(I,J)+AUX(I,K)*C(K,J)
+12      CONTINUE
+11      CONTINUE
+10      CONTINUE
+        RETURN
+        END
+
+
+
+
+
+        SUBROUTINE ESMAC(B)
+C***************************************************
+C THIS ROUTINE SHOWS THE COMPLEX MATRIX B.
+C***************************************************
+        IMPLICIT COMPLEX*16 (A-H,O-Z)
+        DIMENSION B(6,6)
+        DO 60 I=1,6
+        WRITE (*,*) 'COLUMN: ',I
+        DO 61 J=1,6
+        WRITE (*,100) B(J,I)
+100     FORMAT (1X,2E20.10)
+61      CONTINUE
+60      CONTINUE
+        RETURN
+        END
+
+
+
+
+
+        SUBROUTINE ESMAR(B)
+C***************************************************
+C THIS ROUTINE SHOWS THE REAL MATRIX B.
+C***************************************************
+        IMPLICIT REAL*8 (A-H,O-Z)
+        DIMENSION B(6,6)
+        DO 60 I=1,6
+        WRITE (*,200) (B(I,J),J=1,6)
+200     FORMAT (1X,6E18.8)
+60      CONTINUE
+        RETURN
+        END

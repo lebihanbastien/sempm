@@ -1,0 +1,37 @@
+#!/bin/bash
+#####ID --KEY Création aléatoire de l'id 
+id=$(echo $[($RANDOM % ($[10000 - 32000] + 1)) + 10000] )
+##########Onglet 1##########
+#####Avec une colonne#######
+yad --plug="$id" --tabnum=1 --form --columns="1" --item-separator='!' --focus-field="1" --dialog-sep --align="center" \
+--field="Fichier d'entrée:FL" "$HOME" \
+--field=":LBL" "" \
+--field="Fichier de sortie:SFL" "" \
+&> /tmp/data1 &
+##########Onglet 2##########
+#####Avec 3 colonnes########
+yad --plug="$id" --tabnum=2 --form --columns="3" --item-separator='!' --focus-field="2" --dialog-sep --align="center" \
+--field="<span weight='Bold' foreground='black'>Du texte.</span>:LBL" "" \
+--field="motif:" "" \
+--field="bouton avec relief:FBTN" '' \
+--field="Bouton sans relief:BTN" '' \
+--field="bouton avec relief:FBTN" '' \
+--field="Bouton sans relief:BTN" '' \
+&> /tmp/data2 &
+yad --notebook --width="900" --height="700" --center --title="yad notebook" --window-icon="gnome-util" --key="$id" \
+--tab="onglet 1" --tab="Onglet 2" \
+--button="gtk-cancel:1" \
+--button="gtk-ok:0"
+fermernotebook=$?
+
+echo "fermernotebook = " $fermernotebook
+
+
+if [ $fermernotebook -eq 0 ]
+then
+echo "fermernotebook = " $fermernotebook
+exit
+elif [ $fermernotebook -eq 1 ]
+then
+exit
+fi
