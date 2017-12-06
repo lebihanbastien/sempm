@@ -1,5 +1,5 @@
 # SEMPM stands for Sun-Earth-Moon Parameterization Method
-#=========================================================================
+#=========================================================================================
 
 This C/C++ programm allows to compute high-order Fourier-Taylor expansions of the invariant manifolds 
 about the libration points of the Sun-Earth-Moon system, either modeled by the QBCP or the CRTBP
@@ -7,7 +7,7 @@ about the libration points of the Sun-Earth-Moon system, either modeled by the Q
 To do so, it implements the Parameterization Method in the case of T-periodic orbits of a T-periodic Hamiltonian.
 
 # Depencencies 
-#=========================================================================
+#=========================================================================================
 * SEMPM depends on the GNU Scientific Library (GSL) a C library available here: https://www.gnu.org/software/gsl/.
 * For on-the-fly plotting, it also requires Gnuplot, via gnuplot_i.cpp, an extension of the C interface to Gnuplot by N. Devillard. 
 * It also uses an extension of nrutils.h/nrutils.cpp from Numerical Recipes in C for the implementation of C vectors, matrices, and tensors.
@@ -17,7 +17,7 @@ The GUI is optional since SEMPM can be launched from the command line with a con
 
 # Building 
 # (Makefile was obtained via: cbp2make -in sempm.cbp -out Makefile -all-os)
-#=========================================================================
+#=========================================================================================
 Two possibilities
 
 (i) Run the command
@@ -26,7 +26,7 @@ Two possibilities
 (ii) Open the project sempm.cbp in code::blocks and build within the software
 
 # How to use it  (once built)
-#=========================================================================
+#=========================================================================================
 Once built, you have two ways to use SEMPM
 
 (1) Command line. In the sempm folder, run a command of the form
@@ -38,13 +38,13 @@ For the QBCP, a typical workflow is:
 
 a. $ sempm.sh config/qbcp.sh                     //in order to compute the QBCP vector field in /data/VF/ and /data/qbtbp/.
 b. $ sempm.sh config/nfo2/nfo2_eml2.sh           //in order to compute the dynamical equivalent of EML2 and 
-				                 //the change of coordinates (COC) in order to get a normal form at order 2 
-				                 //for the Hamiltonian about the same point (stored in /data/COC/).
+												 //the change of coordinates (COC) in order to get a normal form at order 2 
+											     //for the Hamiltonian about the same point (stored in /data/COC/).
 c. $ sempm.sh config/pm/pm_cm_eml2.sh            //in order to compute the high-order parameterization of the center manifold 
-				                 //about EML2 using the Parameterization Method.
+				                                 //about EML2 using the Parameterization Method.
 d. $ sempm.sh config/test_pm/test_cm_eml2.sh     //in order to test this parameterization at certain orders.
 e. $ sempm.sh config/pmap/pmap_example_eml2.sh   //minimum working example that plots on the fly a Poincaré map 
-						 //at a certain initial energy level using the previous computations
+						                         //at a certain initial energy level using the previous computations
 
 NOTE: steps (a) and (b) have been already performed in the default version so, in principle, there is no need to run them again.
 
@@ -53,10 +53,10 @@ For the CRTBP, a typical workflow is:
 
 
 a. $ sempm.sh config/pm/pm_cm_eml1_crtbp.sh            //in order to compute the high-order parameterization of the center manifold 
-				                       //about EML1 using the Parameterization Method.
+				                                       //about EML1 using the Parameterization Method.
 b. $ sempm.sh config/test_pm/test_cm_eml1_crtbp.sh     //in order to test this parameterization at certain orders.
 c. $ sempm.sh config/pmap/pmap_example_eml1_crtbp.sh   //minimum working example that plots on the fly a Poincaré map 
-						       //at a certain initial energy level using the previous computations
+						                               //at a certain initial energy level using the previous computations
 
 
 (2) Via the GUI (in progress). In the sempm folder, run the following command:
@@ -66,7 +66,7 @@ If YAD is not installed, you must use sempm via commands of the form (1)
 
 
 # Issues & Remarks (in order of importance)
-#=========================================================================
+#=========================================================================================
 1. A memory leak might occur in the destructor of Oftsh class. 
 This is not a big deal as long as Ofts objects (that require the construction of quite a lot of Oftsh objects)
 are not massively created. This is currently the case in the code (no temporary Ofts object).

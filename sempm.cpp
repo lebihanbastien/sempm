@@ -1,7 +1,7 @@
 /**
- * \file main.cpp
+ * \file sempm.cpp
  * \brief Main file (exec) for the computation of the dynamics about the neighborhood of
- *        the points EML1,2 and SEL1,2
+ *        the points EML1,2 and SEL1,2 via the parameterization method.
  *
  * The following models of the Sun-Earth-Moon system are available:
  *   - Quasi-Bicircular Four-Body Problem (QBCP).
@@ -9,8 +9,12 @@
  * The following models of the Sun-Earth-Moon system may be available in the future:
  *   - Bircicular Four-Body Problem (BCP) (work in progress. the real issue being: no
  *     clear dynamical equivalent for EML2
- *   - Coupled Elliptic Restricted Three-Body Problem (CRTBP) (far from being completed).
- * \author BLB.
+ *
+ *
+ *  The main routine in this file makes use of its arguments (int argc, char *argv[])
+ *  and must be used with script files (see README in sempm folder).
+ *
+ * \author BLB
  */
 
 //----------------------------------------------------------------------------------------
